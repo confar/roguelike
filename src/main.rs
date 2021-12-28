@@ -28,25 +28,25 @@ struct Rect {
 }
 
 impl Rect {
-    pub fn new(x: i32, y: i32, w:i32, h: i32) -> Self {
+    pub fn new(x: i32, y: i32, w: i32, h: i32) -> Self {
         Rect {
             x1: x,
             y1: y,
-            x2: x+w,
-            y2: y+h,
+            x2: x + w,
+            y2: y + h,
         }
     }
-    
+
     pub fn center(&self) -> (i32, i32) {
-        let center_x = self.x1 + self.x2 / 2;
-        let center_y = self.y1 + self.y2 / 2;
+        let center_x = (self.x1 + self.x2) / 2;
+        let center_y = (self.y1 + self.y2) / 2;
         (center_x, center_y)
     }
-    
+
     pub fn intersects_with(&self, other: &Rect) -> bool {
         (self.x1 <= other.x2)
             && (self.x2 >= other.x1)
-            && (self.y1 <= other.y2) 
+            && (self.y1 <= other.y2)
             && (self.y2 >= other.y1)
     }
 }
@@ -107,7 +107,7 @@ struct Game {
 fn make_map(player: &mut Object) -> Map {
     let mut map = vec![vec![Tile::wall(); MAP_HEIGHT as usize]; MAP_WIDTH as usize];
     let mut rooms = vec![];
-    
+
     for _ in 0..MAX_ROOMS {
         // random width and height
         let w = rand::thread_rng().gen_range(ROOM_MIN_SIZE, ROOM_MAX_SIZE + 1);
@@ -116,10 +116,10 @@ fn make_map(player: &mut Object) -> Map {
         let x = rand::thread_rng().gen_range(0, MAP_WIDTH - w);
         let y = rand::thread_rng().gen_range(0, MAP_HEIGHT - h);
         let new_room = Rect::new(x, y, w, h);
-        
         let failed = rooms
             .iter()
             .any(|other_room| new_room.intersects_with(other_room));
+
         if !failed {
             create_room(new_room, &mut map);
             let (new_x, new_y) = new_room.center();
