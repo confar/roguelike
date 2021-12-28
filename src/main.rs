@@ -90,6 +90,7 @@ fn create_v_tunnel(y1: i32, y2: i32, x: i32, map: &mut Map) {
 struct Tile {
     blocked: bool,
     block_sight: bool,
+    explored: bool,
 }
 
 impl Tile {
@@ -97,6 +98,7 @@ impl Tile {
         Tile {
             blocked: false, 
             block_sight: false,
+            explored: false,
         }
     }
 
@@ -104,6 +106,7 @@ impl Tile {
         Tile {
             blocked: true,
             block_sight: true,
+            explored: false,
         }
     }
 }
@@ -157,7 +160,7 @@ fn make_map(player: &mut Object) -> Map {
     map
 }
 
-fn render_all(tcod: &mut Tcod, game: &Game, objects: &[Object], fov_recompute: bool) {
+fn render_all(tcod: &mut Tcod, game: &mut Game, objects: &[Object], fov_recompute: bool) {
     let player = &objects[0];
     if fov_recompute{
         tcod.fov.compute_fov(player.x, player.y, TORCH_RADIUS, FOV_LIGHT_WALLS, FOV_ALGO);
@@ -177,7 +180,13 @@ fn render_all(tcod: &mut Tcod, game: &Game, objects: &[Object], fov_recompute: b
                 (true, true) => COLOR_LIGHT_WALL,
                 (true, false) => COLOR_LIGHT_GROUND,
             };
-            tcod.con.set_char_background(x, y, color, BackgroundFlag::Set);
+            let explored = &mut game.map[x as usize][y as usize].explored;
+            if visible {
+                *explored = true
+            }
+            if *explored {
+                tcod.con.set_char_background(x, y, color, BackgroundFlag::Set);
+            }
         }
     }
 
@@ -239,7 +248,7 @@ fn main() {
     
     let mut objects = [player, npc];
     
-    let game = Game{
+    let mut game = Game{
         map: make_map(&mut objects[0]),
     };
     for y in 0..MAP_HEIGHT {
@@ -256,7 +265,7 @@ fn main() {
     while !tcod.root.window_closed() {
         tcod.con.clear();
         let fov_recompute = previous_player_position != (objects[0].x, objects[1].y);
-        render_all(&mut tcod, &game, &objects, fov_recompute);
+        render_all(&mut tcod, &mut game, &objects, fov_recompute);
         tcod.root.flush();
         
         let player = &mut objects[0];
