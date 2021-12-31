@@ -238,7 +238,7 @@ impl Object {
         self.x = x;
         self.y = y;
     }
-    pub fn position(&self) -> (i32, i32) {
+    pub fn pos(&self) -> (i32, i32) {
         (self.x, self.y)
     }
     
@@ -283,15 +283,23 @@ fn main() {
     let mut previous_player_position = (-1, -1);
     while !tcod.root.window_closed() {
         tcod.con.clear();
-        let fov_recompute = previous_player_position != (objects[PLAYER].position());
+        let fov_recompute = previous_player_position != (objects[PLAYER].pos());
         render_all(&mut tcod, &mut game, &objects, fov_recompute);
         tcod.root.flush();
         
         let player = &mut objects[PLAYER];
         previous_player_position = (player.x, player.y);
-        let action = handle_keys(&mut tcod, &game, &mut objects);
-        if action == PlayerAction::Exit {
+        let player_action = handle_keys(&mut tcod, &game, &mut objects);
+
+        if player_action == PlayerAction::Exit {
             break;
+        }
+        if objects[PLAYER].alive && player_action != PlayerAction::DidntTakeTurn {
+            for object in &objects {
+                if (object as *const _) != (&objects[PLAYER] as *const _) {
+                    println!("The {} growls", object.name);
+                }
+            }
         }
     }
 }
@@ -311,39 +319,52 @@ fn handle_keys(tcod: &mut Tcod, game: &Game, objects: &mut [Object]) -> PlayerAc
             // Alt+Enter: toggle fullscreen
             let fullscreen = tcod.root.is_fullscreen();
             tcod.root.set_fullscreen(!fullscreen);
-            DidntTakeTurn;
+            DidntTakeTurn
         }
-        (Key { code: Escape, .. }, _, _) => return Exit,
+        (Key { code: Escape, .. }, _, _) => Exit,
         (Key { code: Up, .. }, _, true) => {
-            move_by(PLAYER, 0, -1, game, objects);
-            TookTurn;
+            player_move_or_attack(PLAYER, 0, -1, game, objects);
+            TookTurn
         }, 
         (Key { code: Down, .. }, _, true) => {
-            move_by(PLAYER, 0, 1, game, objects);
-            TookTurn;
+            player_move_or_attack(PLAYER, 0, 1, game, objects);
+            TookTurn
         },
         (Key { code: Left, .. }, _, true) => {
-            move_by(PLAYER, -1, 0, game, objects);
-            TookTurn;
+            player_move_or_attack(PLAYER, -1, 0, game, objects);
+            TookTurn
         },
         (Key { code: Right, .. }, _, true) => {
-            move_by(PLAYER, 1, 0, game, objects);
-            TookTurn;
+            player_move_or_attack(PLAYER, 1, 0, game, objects);
+            TookTurn
         },
-        _ => return DidntTakeTurn
+        _ => DidntTakeTurn,
     }
-    DidntTakeTurn
 }
 
 fn is_blocked(x: i32, y: i32, map: &Map, objects: &[Object]) -> bool {
     if map[x as usize][y as usize].blocked {
         return true;
     }
-    objects.iter().any(|object| object.blocks && object.position() == (x, y))
+    objects.iter().any(|object| object.blocks && object.pos() == (x, y))
+}
+
+fn player_move_or_attack(id: usize, dx: i32, dy: i32, game: &Game, objects: &mut[Object]) {
+    // the coordinates of player moving/attacking
+    let x = objects[PLAYER].x + dx;
+    let y = objects[PLAYER].y + dy;
+    let target_id = objects.iter().position(|object| object.pos() == (x, y));
+    match target_id {
+        Some(target_id) => println!("The {} laughs at your clumsy efforts to attack him", 
+                                    objects[target_id].name),
+        None => {
+            move_by(PLAYER, dx, dy, &game, objects)
+        }
+    }
 }
 
 fn move_by(id: usize, dx: i32, dy: i32, game: &Game, objects: &mut[Object]) {
-    let (x, y)= objects[id].position();
+    let (x, y)= objects[id].pos();
     if !is_blocked(x + dx, y + dy, &game.map, objects) {
         objects[id].set_position(x+dx, y+dy);
     }
