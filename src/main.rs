@@ -403,22 +403,21 @@ fn move_by(id: usize, dx: i32, dy: i32, game: &Game, objects: &mut[Object]) {
 fn place_objects(room: Rect, map: &Map, objects: &mut Vec<Object>) {
     let num_monsters = rand::thread_rng().gen_range(0, MAX_ROOM_MONSTERS + 1);
     for _ in 0..num_monsters {
-        let x = rand::thread_rng().gen_range(room.x1 + 1 , room.x2);
+        let x = rand::thread_rng().gen_range(room.x1 + 1, room.x2);
         let y = rand::thread_rng().gen_range(room.y1 + 1, room.y2);
         if !is_blocked(x, y, map, objects) {
             let monster = if rand::random::<f32>() < 0.8 {
                 let mut orc = Object::new(x, y, 'o', DESATURATED_GREEN, "orc", true, true);
-                orc.fighter = Some(Fighter{hp: 10, max_hp: 10, defense: 0, power: 2});
+                orc.fighter = Some(Fighter { hp: 10, max_hp: 10, defense: 0, power: 2 });
                 orc.ai = Some(Ai::Basic);
                 orc
-            }  else {
+            } else {
                 let mut troll = Object::new(x, y, 'T', DARK_GREEN, "troll", true, true);
-                troll.fighter = Some(Fighter{hp: 16, max_hp: 16, defense: 1, power: 4});
+                troll.fighter = Some(Fighter { hp: 16, max_hp: 16, defense: 1, power: 4 });
                 troll.ai = Some(Ai::Basic);
                 troll
             };
             objects.push(monster);
         }
     }
-
 }
