@@ -40,8 +40,7 @@ const LIMIT_FPS: i32 = 20; // 20 frames-per-second maximum
 enum PlayerAction {
     TookTurn,
     DidntTakeTurn,
-    Exit
-    
+    Exit,
 }
 
 #[derive(Clone, Debug, PartialEq)]
