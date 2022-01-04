@@ -36,13 +36,6 @@ const COLOR_LIGHT_GROUND: Color = Color {
 
 const LIMIT_FPS: i32 = 20; // 20 frames-per-second maximum
 
-#[derive(Clone, Copy, Debug, PartialEq)]
-enum PlayerAction {
-    TookTurn,
-    DidntTakeTurn,
-    Exit,
-}
-
 #[derive(Clone, Debug, PartialEq)]
 enum Ai {
     Basic,
@@ -88,6 +81,13 @@ impl Rect {
             && (self.y1 <= other.y2)
             && (self.y2 >= other.y1)
     }
+}
+
+#[derive(Clone, Copy, Debug, PartialEq)]
+enum PlayerAction {
+    TookTurn,
+    DidntTakeTurn,
+    Exit,
 }
 
 fn create_room(room: Rect, map: &mut Map) {
