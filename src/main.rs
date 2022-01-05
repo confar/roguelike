@@ -257,6 +257,7 @@ impl Object {
         self.x = x;
         self.y = y;
     }
+    
     pub fn pos(&self) -> (i32, i32) {
         (self.x, self.y)
     }
@@ -264,6 +265,27 @@ impl Object {
     pub fn draw(&self, con: &mut dyn Console) {
         con.set_default_foreground(self.color);
         con.put_char(self.x, self.y, self.char, tcod::console::BackgroundFlag::None);
+    }
+    
+    pub fn distance_to(&self, other: &Object) -> f32 {
+        let dx = other.x - self.x;
+        let dy = other.y - self.y;
+        ((dx.pow(2) + dy.pow(2)) as f32).sqrt()
+    }
+}
+
+fn ai_take_turn(monster_id: usize, tcod: &Tcod, game: &Game, objects: &mut [Object]) {
+    let (monster_x, monster_y) = objects[monster_id].pos();
+    if tcod.fov.is_in_fov(monster_x, monster_y) {
+        if objects[monster_id].distance_to(&objects[PLAYER]) >= 2.0 {
+            let (player_x, player_y) = objects[PLAYER].pos();
+            move_towards(monster_id, player_x, player_y, game, objects);
+        } else if objects[PLAYER].fighter.map_or(false, |f| f.hp > 0) {
+            let monster = &objects[monster_id];
+            println!("The attack of the {} bounces off your shiny metal armor!",
+                     monster.name)
+            
+        }
     }
 }
 
@@ -314,9 +336,9 @@ fn main() {
             break;
         }
         if objects[PLAYER].alive && player_action != PlayerAction::DidntTakeTurn {
-            for object in &objects {
-                if (object as *const _) != (&objects[PLAYER] as *const _) {
-                    println!("The {} growls", object.name);
+            for id in 0..objects.len() {
+                if objects[id].ai.is_some() {
+                    ai_take_turn(id, &tcod, &game, &mut objects);
                 }
             }
         }
@@ -385,7 +407,7 @@ fn player_move_or_attack(id: usize, dx: i32, dy: i32, game: &Game, objects: &mut
 fn move_towards(id: usize, target_x: i32, target_y: i32, game: &Game, objects: &mut [Object]) {
     let dx = target_x - objects[id].x;
     let dy = target_y - objects[id].y;
-    let distance = (dx.pow(2) + dy.pow(2) as f32).sqrt();
+    let distance = ((dx.pow(2) + dy.pow(2)) as f32).sqrt();
     
     let dx = (dx as f32 / distance).round() as i32;
     let dy = (dy as f32 / distance).round() as i32;
