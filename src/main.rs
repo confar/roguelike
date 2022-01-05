@@ -272,6 +272,24 @@ impl Object {
         let dy = other.y - self.y;
         ((dx.pow(2) + dy.pow(2)) as f32).sqrt()
     }
+    
+    pub fn take_damage(&mut self, damage: i32) {
+        if let Some(fighter) = self.fighter.as_mut() {
+            if damage > 0 {
+                fighter.hp -= damage;
+            }
+        }
+    }
+    
+    pub fn attack(&mut self, target: &mut Object) {
+        let damage = self.fighter.map_or(0, |f| f.power) - target.fighter.map_or(0, |f| f.defense);
+        if damage > 0 {
+            println!("{} attacks {} for {} hit points", self.name, target.name, damage);
+            target.take_damage(damage);
+        }  else {
+            println!("{} attacks {} but it has no effect", self.name, target.name);
+        }
+    }
 }
 
 fn ai_take_turn(monster_id: usize, tcod: &Tcod, game: &Game, objects: &mut [Object]) {
@@ -281,9 +299,8 @@ fn ai_take_turn(monster_id: usize, tcod: &Tcod, game: &Game, objects: &mut [Obje
             let (player_x, player_y) = objects[PLAYER].pos();
             move_towards(monster_id, player_x, player_y, game, objects);
         } else if objects[PLAYER].fighter.map_or(false, |f| f.hp > 0) {
-            let monster = &objects[monster_id];
-            println!("The attack of the {} bounces off your shiny metal armor!",
-                     monster.name)
+            let monster = &mut objects[monster_id];
+            monster.attack(&mut objects[PLAYER]);
             
         }
     }
