@@ -15,6 +15,10 @@ const MAX_ROOMS: i32 = 30;
 const MAP_WIDTH: i32 = 80;
 const MAP_HEIGHT: i32 = 45;
 
+const SCREEN_HEIGHT: i32 = 45;
+const SCREEN_WIDTH: i32 = 80;
+
+
 const MAX_ROOM_MONSTERS: i32 = 3;
 const PLAYER: usize = 0;
 
@@ -221,6 +225,14 @@ fn render_all(tcod: &mut Tcod, game: &mut Game, objects: &[Object], fov_recomput
          1.0,
          1.0
     );
+    tcod.root.set_default_foreground(WHITE);
+    if let Some(fighter) = objects[PLAYER].fighter {
+        tcod.root.print_ex(1,
+                           SCREEN_HEIGHT - 2,
+        BackgroundFlag::None,
+        TextAlignment::Left,
+        format!("HP: {}/{}", fighter.hp, fighter.max_hp));
+    }
 }
 
 #[derive(Debug)]
@@ -296,8 +308,8 @@ fn ai_take_turn(monster_id: usize, tcod: &Tcod, game: &Game, objects: &mut [Obje
             let (player_x, player_y) = objects[PLAYER].pos();
             move_towards(monster_id, player_x, player_y, game, objects);
         } else if objects[PLAYER].fighter.map_or(false, |f| f.hp > 0) {
-            let monster = &mut objects[monster_id];
-            monster.attack(&mut objects[PLAYER]);
+            let (monster, player) = mut_two(monster_id, PLAYER, objects);
+            monster.attack(player);
             
         }
     }
@@ -397,6 +409,17 @@ fn handle_keys(tcod: &mut Tcod, game: &Game, objects: &mut [Object]) -> PlayerAc
     }
 }
 
+fn mut_two<T>(first_index: usize, second_index: usize, items: &mut [T]) -> (&mut T, &mut T) {
+    assert!(first_index != second_index);
+    let split_at_index = cmp::max(first_index, second_index);
+    let (first_slice, second_slice) = items.split_at_mut(split_at_index);
+    if first_index < second_index {
+        (&mut first_slice[first_index], &mut second_slice[0])
+    } else {
+        (&mut second_slice[0], &mut first_slice[second_index])
+    }
+}
+
 fn is_blocked(x: i32, y: i32, map: &Map, objects: &[Object]) -> bool {
     if map[x as usize][y as usize].blocked {
         return true;
@@ -410,8 +433,10 @@ fn player_move_or_attack(id: usize, dx: i32, dy: i32, game: &Game, objects: &mut
     let y = objects[PLAYER].y + dy;
     let target_id = objects.iter().position(|object| object.pos() == (x, y));
     match target_id {
-        Some(target_id) => println!("The {} laughs at your clumsy efforts to attack him", 
-                                    objects[target_id].name),
+        Some(target_id) => {
+            let (player, target) = mut_two(PLAYER, target_id, objects);
+            player.attack(target);
+        },
         None => {
             move_by(PLAYER, dx, dy, &game, objects)
         }
